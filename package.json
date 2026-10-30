@@ -1,0 +1,16 @@
+{
+  "name": "biocloud-iot-backend",
+  "version": "2.0.0",
+  "description": "BioCloud IoT Smart Healthcare Monitoring - Real-Time Patient Temperature & RBAC Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "simulate:esp32": "node test/esp32_simulator.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "ws": "^8.18.0"
+  }
+}
