@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ========================================================================= -->
+<!--  BioCloud IoT - Apache Ant Build & Cloud Deployment Script                -->
+<!--  Course: Cloud Computing (Academic Presentation)                          -->
+<!--  Targets: clean, init, test, start-server, start-cloud-tunnel, deploy-cloud -->
+<!-- ========================================================================= -->
+<project name="BioCloud-IoT-CloudComputing" default="help" basedir=".">
+
+    <description>
+        BioCloud IoT: Smart Healthcare Monitoring System
+        Cloud Deployment and Orchestration Script using Apache Ant.
+        Integrates Local Node.js PaaS Backend with Cloudflare Global Edge Cloud.
+    </description>
+
+    <!-- Property Definitions -->
+    <property name="app.name" value="BioCloud-IoT"/>
+    <property name="app.version" value="3.2"/>
+    <property name="server.port" value="3000"/>
+    <property name="server.entry" value="server.js"/>
+    <property name="cloud.provider" value="Cloudflare Global Anycast Edge Cloud"/>
+    <property name="cloud.tunnel.cmd" value="cloudflared"/>
+    <property name="cloud.tunnel.args" value="tunnel --url http://localhost:${server.port}"/>
+    <property name="dist.dir" value="${basedir}/dist"/>
+    <property name="logs.dir" value="${basedir}/logs"/>
+
+    <!-- Target: Help / Overview -->
+    <target name="help" description="Displays available Cloud Computing build and deployment targets">
+        <echo message="=================================================================="/>
+        <echo message="   BioCloud IoT - Cloud Computing Automated Deployment Tool       "/>
+        <echo message="   Cloud Provider: ${cloud.provider}                              "/>
+        <echo message="=================================================================="/>
+        <echo message="Available Targets:"/>
+        <echo message="  ant init               - Initializes runtime folders and dependencies"/>
+        <echo message="  ant test               - Verifies Node.js syntax and integrity"/>
+        <echo message="  ant start-server       - Starts the Node.js Cloud PaaS Ingestion Engine"/>
+        <echo message="  ant start-cloud-tunnel - Connects application to Cloudflare Edge Cloud"/>
+        <echo message="  ant deploy-cloud       - Full automated build and cloud deployment"/>
+        <echo message="  ant clean              - Cleans distribution and log directories"/>
+        <echo message="=================================================================="/>
+    </target>
+
+    <!-- Target: Init -->
+    <target name="init" description="Initializes build and log directories">
+        <echo message="[INIT] Creating directories and validating environment..."/>
+        <mkdir dir="${dist.dir}"/>
+        <mkdir dir="${logs.dir}"/>
+        <echo message="[INIT] BioCloud IoT build environment ready."/>
+    </target>
+
+    <!-- Target: Test & Syntax Verification -->
+    <target name="test" depends="init" description="Verifies code syntax and integrity before cloud deployment">
+        <echo message="[TEST] Validating server.js and app.js syntax..."/>
+        <exec executable="node" failonerror="true">
+            <arg value="-c"/>
+            <arg value="${server.entry}"/>
+        </exec>
+        <exec executable="node" failonerror="true">
+            <arg value="-c"/>
+            <arg value="app.js"/>
+        </exec>
+        <echo message="[TEST] All JavaScript components passed syntax checks successfully."/>
+    </target>
+
+    <!-- Target: Start Server (PaaS Layer) -->
+    <target name="start-server" depends="test" description="Runs the local BioCloud PaaS Ingestion Server">
+        <echo message="[PAAS] Starting BioCloud Healthcare PaaS Server on port ${server.port}..."/>
+        <exec executable="node" spawn="true">
+            <arg value="${server.entry}"/>
+        </exec>
+        <echo message="[PAAS] Server initiated on http://localhost:${server.port}"/>
+    </target>
+
+    <!-- Target: Start Cloud Edge Gateway (Cloudflare Anycast Ingress) -->
+    <target name="start-cloud-tunnel" description="Initiates Zero-Trust Cloud Tunnel to Cloudflare Edge">
+        <echo message="[CLOUD] Establishing outbound TLS 1.3 tunnel to Cloudflare Global Edge..."/>
+        <echo message="[CLOUD] Executing: ${cloud.tunnel.cmd} ${cloud.tunnel.args}"/>
+        <exec executable="${cloud.tunnel.cmd}" spawn="true">
+            <arg line="${cloud.tunnel.args}"/>
+        </exec>
+        <echo message="[CLOUD] Tunnel active. Traffic is routed through Cloudflare Anycast CDN."/>
+    </target>
+
+    <!-- Target: Full Cloud Deployment -->
+    <target name="deploy-cloud" depends="test" description="Complete automated Cloud deployment">
+        <echo message="=================================================================="/>
+        <echo message="   DEPLOYING BIOCLOUD IOT TO THE HYBRID CLOUD                     "/>
+        <echo message="=================================================================="/>
+        <echo message="Step 1: Node.js PaaS Engine Verification [OK]"/>
+        <echo message="Step 2: Starting Local Healthcare Ingestion Server..."/>
+        <exec executable="cmd" spawn="true">
+            <arg value="/c"/>
+            <arg value="start cmd /k node ${server.entry}"/>
+        </exec>
+        <sleep seconds="2"/>
+        <echo message="Step 3: Connecting to Cloudflare Global Anycast Edge Network..."/>
+        <exec executable="cmd" spawn="true">
+            <arg value="/c"/>
+            <arg value="start cmd /k ${cloud.tunnel.cmd} ${cloud.tunnel.args}"/>
+        </exec>
+        <echo message="[SUCCESS] BioCloud IoT is now live on the Public Cloud."/>
+    </target>
+
+    <!-- Target: Clean -->
+    <target name="clean" description="Deletes build artifacts and temporary files">
+        <echo message="[CLEAN] Cleaning ${dist.dir} and temporary files..."/>
+        <delete dir="${dist.dir}"/>
+        <delete dir="${logs.dir}"/>
+        <echo message="[CLEAN] Cleanup completed."/>
+    </target>
+
+</project>
