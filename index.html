@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BioCloud IoT — Smart Healthcare Monitoring</title>
+    <meta name="description" content="BioCloud IoT Smart Healthcare Monitoring Platform — Real-time patient vitals, ECG monitoring, and secure multi-role access for hospitals." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ===================================================================
+     GLOBAL TOAST CONTAINER
+=================================================================== -->
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ===================================================================
+     GLOBAL LOADING OVERLAY
+=================================================================== -->
+<div id="loading-overlay" class="loading-overlay hidden">
+    <div class="loading-spinner-wrap">
+        <div class="loading-spinner"></div>
+        <p id="loading-text">Processing…</p>
+    </div>
+</div>
+
+<!-- ===================================================================
+     AUTH PAGES  (#/login · #/register · #/verify-email · #/forgot-password)
+=================================================================== -->
+<div id="page-auth" class="page-auth hidden">
+
+    <!-- Background animated blobs -->
+    <div class="auth-bg">
+        <div class="auth-blob blob-1"></div>
+        <div class="auth-blob blob-2"></div>
+        <div class="auth-blob blob-3"></div>
+    </div>
+
+    <div class="auth-container">
+
+        <!-- Brand -->
+        <div class="auth-brand">
+            <div class="auth-logo">
+                <i class="fas fa-heartbeat"></i>
+            </div>
+            <h1 class="auth-brand-name">BioCloud IoT</h1>
+            <p class="auth-brand-sub">Smart Healthcare Monitoring Platform</p>
+        </div>
+
+        <!-- === LOGIN PANEL === -->
+        <div id="auth-panel-login" class="auth-panel">
+            <div class="lan-access-banner" style="margin-bottom: 16px; padding: 12px 14px; background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.3); border-radius: var(--radius-md); font-size: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-globe" style="color: var(--cyan); font-size: 14px;"></i>
+                        <strong style="color: var(--cyan);">Worldwide Cloud Access (4G / 5G):</strong>
+                    </span>
+                    <span class="badge badge-stable" style="font-size: 10px; padding: 2px 8px;">Cloud Live</span>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <a id="auth-cloud-link" href="#" target="_blank" class="mono" style="color: #fff; text-decoration: underline; font-weight: 600; word-break: break-all;">Detecting Cloud Edge...</a>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--text-muted); border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px;">
+                    <span><i class="fas fa-wifi"></i> Hospital LAN: <span id="lan-ip-banner" class="mono">http://localhost:3000</span></span>
+                    <button type="button" id="btn-copy-auth-link" style="background:none; border:none; color:var(--cyan); cursor:pointer; font-size:11px;">
+                        <i class="fas fa-copy"></i> Copy Link
+                    </button>
+                </div>
+            </div>
+            <h2 class="auth-title">Sign In</h2>
+            <p class="auth-subtitle">Access your secure healthcare dashboard</p>
+            <form id="form-login" novalidate>
+                <div class="form-group">
+                    <label for="login-email">Email Address</label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" id="login-email" placeholder="your@email.com" autocomplete="email" required />
+                    </div>
+                    <span class="field-error" id="login-email-err"></span>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required />
+                        <button type="button" class="toggle-password" data-target="login-password" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <span class="field-error" id="login-password-err"></span>
+                </div>
+                <div class="form-row-between">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="login-remember" /> Remember me
+                    </label>
+                    <button type="button" class="link-btn" id="btn-goto-forgot">Forgot password?</button>
+                </div>
+                <div class="rate-limit-banner hidden" id="login-rate-banner">
+                    <i class="fas fa-shield-halved"></i>
+                    <span id="login-rate-msg">Too many attempts. Please wait.</span>
+                </div>
+                <button type="submit" class="btn-primary btn-full" id="btn-login">
+                    <span class="btn-label">Sign In</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+            <p class="auth-switch">New relative? <button class="link-btn" id="btn-goto-register">Create account</button></p>
+
+            <!-- Quick Demo Credentials -->
+            <div class="demo-creds">
+                <p class="demo-creds-title"><i class="fas fa-flask"></i> Demo Credentials</p>
+                <div class="demo-creds-grid">
+                    <button class="demo-fill-btn" data-email="admin@hospital.org" data-pass="Admin@123!">
+                        <i class="fas fa-user-shield"></i> Admin
+                    </button>
+                    <button class="demo-fill-btn" data-email="dr.thorne@cardio.org" data-pass="Doc@123!">
+                        <i class="fas fa-stethoscope"></i> Doctor
+                    </button>
+                    <button class="demo-fill-btn" data-email="" data-pass="" data-role="relative">
+                        <i class="fas fa-users"></i> Relative
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- === REGISTER PANEL === -->
+        <div id="auth-panel-register" class="auth-panel hidden">
+            <h2 class="auth-title">Patient Relative Registration</h2>
+            <p class="auth-subtitle">Register to monitor your loved one's health updates</p>
+            <form id="form-register" novalidate>
+                <div class="form-group">
+                    <label for="reg-name">Full Name</label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" id="reg-name" placeholder="Jane Smith" autocomplete="name" required />
+                    </div>
+                    <span class="field-error" id="reg-name-err"></span>
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">Email Address</label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" id="reg-email" placeholder="your@email.com" autocomplete="email" required />
+                    </div>
+                    <span class="field-error" id="reg-email-err"></span>
+                </div>
+                <div class="form-group">
+                    <label for="reg-phone">Phone Number <span class="optional-tag">(optional)</span></label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-phone input-icon"></i>
+                        <input type="tel" id="reg-phone" placeholder="+91 98765 43210" autocomplete="tel" />
+                    </div>
+                    <span class="field-error" id="reg-phone-err"></span>
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Password</label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" id="reg-password" placeholder="Min 8 chars, upper, digit, symbol" autocomplete="new-password" required />
+                        <button type="button" class="toggle-password" data-target="reg-password" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-strength-bar" id="reg-pw-strength-bar">
+                        <div class="strength-track"><div class="strength-fill" id="reg-pw-fill"></div></div>
+                        <span id="reg-pw-label" class="strength-label"></span>
+                    </div>
+                    <span class="field-error" id="reg-password-err"></span>
+                </div>
+                <div class="form-group">
+                    <label for="reg-confirm">Confirm Password</label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" id="reg-confirm" placeholder="Repeat password" autocomplete="new-password" required />
+                    </div>
+                    <span class="field-error" id="reg-confirm-err"></span>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label terms-label">
+                        <input type="checkbox" id="reg-terms" required />
+                        I agree to the <a href="#" class="link-a">Terms & Privacy Policy</a>
+                    </label>
+                    <span class="field-error" id="reg-terms-err"></span>
+                </div>
+                <div class="rate-limit-banner hidden" id="reg-rate-banner">
+                    <i class="fas fa-shield-halved"></i>
+                    <span id="reg-rate-msg">Too many attempts. Please wait.</span>
+                </div>
+                <button type="submit" class="btn-primary btn-full" id="btn-register">
+                    <span class="btn-label">Create Account</span>
+                    <i class="fas fa-user-plus"></i>
+                </button>
+            </form>
+            <p class="auth-switch">Already have an account? <button class="link-btn" id="btn-goto-login-from-reg">Sign In</button></p>
+        </div>
+
+        <!-- === EMAIL VERIFY PANEL === -->
+        <div id="auth-panel-verify" class="auth-panel hidden">
+            <div class="verify-icon-wrap">
+                <i class="fas fa-envelope-open-text"></i>
+            </div>
+            <h2 class="auth-title">Check Your Email</h2>
+            <p class="auth-subtitle">
+                We've sent a 6-digit verification code to<br />
+                <strong id="verify-email-display">your@email.com</strong>
+            </p>
+            <!-- Simulated code reveal box (since no real SMTP) -->
+            <div class="simulated-email-box" id="simulated-email-box">
+                <i class="fas fa-info-circle"></i>
+                <span>Demo mode — Your code: <strong id="demo-code-display">------</strong></span>
+            </div>
+            <form id="form-verify" novalidate>
+                <div class="form-group otp-group">
+                    <label>Enter Verification Code</label>
+                    <div class="otp-inputs">
+                        <input type="text" maxlength="1" class="otp-digit" id="otp-0" inputmode="numeric" />
+                        <input type="text" maxlength="1" class="otp-digit" id="otp-1" inputmode="numeric" />
+                        <input type="text" maxlength="1" class="otp-digit" id="otp-2" inputmode="numeric" />
+                        <input type="text" maxlength="1" class="otp-digit" id="otp-3" inputmode="numeric" />
+                        <input type="text" maxlength="1" class="otp-digit" id="otp-4" inputmode="numeric" />
+                        <input type="text" maxlength="1" class="otp-digit" id="otp-5" inputmode="numeric" />
+                    </div>
+                    <span class="field-error" id="verify-code-err"></span>
+                </div>
+                <button type="submit" class="btn-primary btn-full" id="btn-verify">
+                    <span class="btn-label">Verify Email</span>
+                    <i class="fas fa-check-circle"></i>
+                </button>
+            </form>
+            <p class="auth-switch">
+                Didn't receive code?
+                <button class="link-btn" id="btn-resend-code">Resend Code</button>
+            </p>
+            <p class="auth-switch"><button class="link-btn" id="btn-back-to-login-from-verify">← Back to Login</button></p>
+        </div>
+
+        <!-- === FORGOT PASSWORD PANEL === -->
+        <div id="auth-panel-forgot" class="auth-panel hidden">
+            <div class="verify-icon-wrap">
+                <i class="fas fa-key"></i>
+            </div>
+            <h2 class="auth-title">Reset Password</h2>
+            <p class="auth-subtitle">Enter your registered email to receive a reset link</p>
+            <form id="form-forgot" novalidate>
+                <div class="form-group">
+                    <label for="forgot-email">Email Address</label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" id="forgot-email" placeholder="your@email.com" />
+                    </div>
+                    <span class="field-error" id="forgot-email-err"></span>
+                </div>
+                <div class="simulated-email-box hidden" id="forgot-reset-box">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Demo mode — Reset token: <strong id="forgot-token-display"></strong></span>
+                </div>
+                <div class="form-group hidden" id="forgot-new-pass-group">
+                    <label for="forgot-new-pass">New Password</label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" id="forgot-new-pass" placeholder="New password" />
+                        <button type="button" class="toggle-password" data-target="forgot-new-pass" aria-label="Toggle"><i class="fas fa-eye"></i></button>
+                    </div>
+                    <span class="field-error" id="forgot-new-pass-err"></span>
+                </div>
+                <div class="form-group hidden" id="forgot-token-input-group">
+                    <label for="forgot-token-input">Reset Token</label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-fingerprint input-icon"></i>
+                        <input type="text" id="forgot-token-input" placeholder="Paste token from email" />
+                    </div>
+                    <span class="field-error" id="forgot-token-err"></span>
+                </div>
+                <button type="submit" class="btn-primary btn-full" id="btn-forgot-submit">
+                    <span class="btn-label">Send Reset Link</span>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+            <p class="auth-switch"><button class="link-btn" id="btn-back-to-login-from-forgot">← Back to Login</button></p>
+        </div>
+
+    </div>
+</div>
+
+<!-- ===================================================================
+     ADMIN DASHBOARD
+=================================================================== -->
+<div id="page-admin" class="page-dashboard hidden">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="admin-sidebar">
+        <div class="sidebar-brand">
+            <i class="fas fa-heartbeat brand-icon"></i>
+            <span class="brand-text">BioCloud IoT</span>
+        </div>
+        <nav class="sidebar-nav">
+            <button class="nav-item active" data-panel="admin-panel-overview" id="nav-admin-overview">
+                <i class="fas fa-gauge-high"></i><span>Overview</span>
+            </button>
+            <button class="nav-item" data-panel="admin-panel-patients" id="nav-admin-patients">
+                <i class="fas fa-bed-pulse"></i><span>Patients</span>
+            </button>
+            <button class="nav-item" data-panel="admin-panel-relative-mgmt" id="nav-admin-relatives">
+                <i class="fas fa-users-line"></i><span>Relative Access</span>
+            </button>
+            <button class="nav-item" data-panel="admin-panel-doctors" id="nav-admin-doctors">
+                <i class="fas fa-user-doctor"></i><span>Doctors</span>
+            </button>
+            <button class="nav-item" data-panel="admin-panel-audit" id="nav-admin-audit">
+                <i class="fas fa-scroll"></i><span>Audit Log</span>
+            </button>
+            <button class="nav-item" data-panel="admin-panel-notifications" id="nav-admin-notif">
+                <i class="fas fa-bell"></i><span>Notifications</span>
+            </button>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="session-info">
+                <i class="fas fa-user-shield"></i>
+                <div>
+                    <span class="session-name" id="admin-session-name">Admin</span>
+                    <span class="session-role">Hospital Administrator</span>
+                </div>
+            </div>
+            <button class="btn-logout" id="btn-admin-logout" title="Sign Out">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="dashboard-main" id="admin-main">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <button class="sidebar-toggle" id="admin-sidebar-toggle"><i class="fas fa-bars"></i></button>
+            <div class="topbar-title" id="admin-topbar-title">Overview</div>
+            <div class="topbar-right">
+                <div class="server-status-pill online" id="admin-server-status">
+                    <span class="status-dot"></span>
+                    <span id="admin-status-text">Cloud Sync: Online</span>
+                </div>
+                <div class="clock-display" id="admin-clock"></div>
+            </div>
+        </header>
+
+        <!-- ---- OVERVIEW PANEL ---- -->
+        <section class="dashboard-panel active" id="admin-panel-overview">
+            <div class="panel-header">
+                <h2><i class="fas fa-gauge-high"></i> System Overview</h2>
+                <span class="panel-badge" id="admin-overview-date"></span>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card stat-cyan">
+                    <div class="stat-icon"><i class="fas fa-bed-pulse"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-total-patients">3</span>
+                        <span class="stat-label">Total Patients</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-purple">
+                    <div class="stat-icon"><i class="fas fa-triangle-exclamation"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-critical-patients">1</span>
+                        <span class="stat-label">Critical Patients</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-green">
+                    <div class="stat-icon"><i class="fas fa-user-doctor"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-total-doctors">3</span>
+                        <span class="stat-label">Active Doctors</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-amber">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-total-relatives">0</span>
+                        <span class="stat-label">Registered Relatives</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick patient table -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3><i class="fas fa-list-check"></i> Live Patient Status</h3>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table" id="admin-overview-patient-table">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Ward</th>
+                                <th>Doctor</th>
+                                <th>Status</th>
+                                <th>Live Temp</th>
+                                <th>Relative Linked</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-overview-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ESP32 & DS18B20 Live Hardware & Simulator Bar -->
+            <div class="hardware-simulator-card" id="admin-hardware-sim-card">
+                <div class="hardware-sim-header">
+                    <div>
+                        <h3 style="margin: 0; font-size: 16px;"><i class="fas fa-microchip"></i> ESP32 + DS18B20 Live Hardware & Temperature Simulator</h3>
+                        <small class="text-muted" id="admin-hardware-status-sub">ESP32 Cloud Ingestion: <code class="mono" id="admin-esp32-endpoint">http://192.168.205.219:3000/api/telemetry</code></small>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <a href="/cloud-db" target="_blank" class="btn-secondary" style="padding: 6px 14px; font-size: 12px; border-color: rgba(179,136,255,0.4); color: #b388ff; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-database"></i> Cloud DB Console
+                        </a>
+                        <button class="btn-secondary" id="btn-open-cloud-modal" style="padding: 6px 14px; font-size: 12px; border-color: rgba(0,212,255,0.4); color: var(--cyan);">
+                            <i class="fas fa-cloud"></i> Cloud Architecture
+                        </button>
+                        <button class="btn-secondary" id="btn-open-wiring-modal" style="padding: 6px 14px; font-size: 12px;">
+                            <i class="fas fa-book-open"></i> Wiring Guide
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Global Cloud Gateway Live Status -->
+                <div id="cloud-status-banner" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; padding: 10px 14px; background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.25); border-radius: var(--radius-md);">
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <span class="badge badge-stable" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px;">
+                            <i class="fas fa-satellite-dish"></i> Cloud Edge Gateway Live
+                        </span>
+                        <span style="font-size: 13px;">Public Remote Access: <a id="cloud-public-link" href="#" target="_blank" class="mono" style="color: var(--cyan); text-decoration: underline; font-weight: 600;">Detecting Cloud Edge...</a></span>
+                    </div>
+                    <button class="btn-secondary" id="btn-copy-cloud-url" style="padding: 5px 12px; font-size: 11px; cursor: pointer;">
+                        <i class="fas fa-copy"></i> Copy Cloud URL
+                    </button>
+                </div>
+
+                <!-- Interactive Temperature Simulator Controls -->
+                <div class="sim-interactive-box" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;"><i class="fas fa-user-injured"></i> Target Patient:</label>
+                            <select id="sim-target-patient" class="select-input" style="padding: 4px 10px; font-size: 13px;">
+                                <option value="p1">John Doe (#PT-89421) - ICU Ward A</option>
+                                <option value="p2">Sarah Jenkins (#PT-92304) - ICU Ward B</option>
+                                <option value="p3">Robert Chen (#PT-71089) - Home Remote Care</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 12px; color: var(--text-muted);">Simulated Temp:</span>
+                            <span id="sim-temp-display" class="badge badge-stable" style="font-size: 16px; font-weight: 700; padding: 4px 12px; font-family: 'JetBrains Mono', monospace;">
+                                <i class="fas fa-temperature-half"></i> <span id="sim-temp-val">36.8</span> °C
+                            </span>
+                            <span id="sim-status-badge" class="badge badge-stable" style="font-size: 11px;">Normal</span>
+                        </div>
+                    </div>
+
+                    <!-- Slider & Increments Control Row -->
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-muted); min-width: 90px;"><i class="fas fa-sliders"></i> Temp Slider:</span>
+                        <input type="range" id="sim-temp-slider" min="35.0" max="42.0" step="0.1" value="36.8" style="flex: 1; min-width: 160px; accent-color: var(--cyan); cursor: pointer;" />
+                        
+                        <!-- Increase / Decrease Step Buttons -->
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button class="btn-sim" id="btn-temp-dec-05" title="Decrease temperature by 0.5 °C" style="padding: 6px 12px;">
+                                <i class="fas fa-minus"></i> 0.5 °C
+                            </button>
+                            <button class="btn-sim" id="btn-temp-inc-02" title="Increase temperature by 0.2 °C" style="padding: 6px 12px; border-color: rgba(0,212,255,0.4); color: var(--cyan);">
+                                <i class="fas fa-plus"></i> 0.2 °C
+                            </button>
+                            <button class="btn-sim" id="btn-temp-inc-05" title="Increase temperature by 0.5 °C" style="padding: 6px 12px; border-color: rgba(245,158,11,0.5); color: var(--amber);">
+                                <i class="fas fa-plus"></i> 0.5 °C
+                            </button>
+                            <button class="btn-sim sim-fever" id="btn-temp-inc-10" title="Spike temperature by +1.0 °C into Fever" style="padding: 6px 12px; border-color: rgba(255,79,79,0.5); color: var(--red); font-weight: 600;">
+                                <i class="fas fa-arrow-trend-up"></i> +1.0 °C Spike
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Demo Gradual Fever Simulation Button -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 14px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn-primary" id="btn-gradual-fever-demo" style="padding: 7px 16px; font-size: 12px; background: linear-gradient(135deg, #ff8c00, #ff4f4f); border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fas fa-play" id="icon-gradual-demo"></i> <span id="label-gradual-demo">Start Gradual Fever Rise (Demo Mode)</span>
+                            </button>
+                            <span id="gradual-fever-status" style="font-size: 12px; color: var(--text-muted); font-style: italic;">
+                                Auto-increments temp every 2.5s until mobile siren triggers at 38.0 °C.
+                            </span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">
+                            Thresholds: Warning at <strong>37.5 °C</strong> · Critical Mobile Alarm at <strong>38.0 °C</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Quick Preset Buttons -->
+                <div class="hardware-sim-actions">
+                    <span style="font-size: 12px; color: var(--text-muted); align-self: center; margin-right: 4px;">Quick Presets:</span>
+                    <button class="btn-sim sim-normal" id="btn-sim-normal" title="Send normal 36.8 °C reading">
+                        <i class="fas fa-heart"></i> Normal (36.8 °C)
+                    </button>
+                    <button class="btn-sim sim-disconnect" id="btn-sim-warn" title="Send elevated 37.7 °C reading">
+                        <i class="fas fa-triangle-exclamation"></i> Warning (37.7 °C)
+                    </button>
+                    <button class="btn-sim sim-fever" id="btn-sim-fever" title="Send critical 38.6 °C fever reading (Rings Mobile Alarm)">
+                        <i class="fas fa-fire"></i> Critical Fever (38.6 °C)
+                    </button>
+                    <button class="btn-sim sim-disconnect" id="btn-sim-disconnect" title="Simulate wire disconnect (-127 °C)">
+                        <i class="fas fa-plug-circle-xmark"></i> Sensor Off (-127 °C)
+                    </button>
+                    <label class="checkbox-label" style="margin-left: auto; align-self: center;">
+                        <input type="checkbox" id="chk-auto-telemetry" /> Random Ambient Stream (Every 3s)
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- ---- PATIENTS PANEL ---- -->
+        <section class="dashboard-panel" id="admin-panel-patients">
+            <div class="panel-header">
+                <h2><i class="fas fa-bed-pulse"></i> Patient Management</h2>
+                <button class="btn-secondary" id="btn-add-patient"><i class="fas fa-plus"></i> Add Patient</button>
+            </div>
+            <div class="search-filter-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="search" id="patient-search" placeholder="Search patient name, ID, ward…" />
+                </div>
+                <select id="patient-status-filter" class="select-input">
+                    <option value="">All Statuses</option>
+                    <option value="Critical">Critical</option>
+                    <option value="Stable">Stable</option>
+                    <option value="Monitored">Monitored</option>
+                    <option value="Discharged">Discharged</option>
+                </select>
+            </div>
+            <div class="patient-cards-grid" id="admin-patient-grid"></div>
+        </section>
+
+        <!-- ---- RELATIVE ACCESS PANEL ---- -->
+        <section class="dashboard-panel" id="admin-panel-relative-mgmt">
+            <div class="panel-header">
+                <h2><i class="fas fa-users-line"></i> Patient Relative Access Management</h2>
+            </div>
+
+            <!-- Step 1: Select Patient -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-magnifying-glass"></i> Step 1 — Select Patient</h3>
+                </div>
+                <div class="card-body">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="search" id="rel-patient-search" placeholder="Search patient name or ID…" />
+                    </div>
+                    <div class="patient-select-list" id="rel-patient-list"></div>
+                    <div class="selected-patient-badge hidden" id="rel-selected-patient-badge">
+                        <i class="fas fa-bed-pulse"></i>
+                        <div>
+                            <span id="rel-selected-patient-name"></span>
+                            <small id="rel-selected-patient-meta"></small>
+                        </div>
+                        <button class="link-btn" id="btn-rel-clear-patient"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Manage Relatives (visible once patient selected) -->
+            <div class="card hidden" id="rel-mgmt-step2">
+                <div class="card-header">
+                    <h3><i class="fas fa-user-plus"></i> Step 2 — Link Verified Relative</h3>
+                </div>
+                <div class="card-body">
+                    <p class="helper-text">Enter the email address of a <strong>verified</strong> and <strong>registered</strong> relative account.</p>
+                    <div class="form-inline-row">
+                        <div class="input-icon-wrap flex-grow">
+                            <i class="fas fa-envelope input-icon"></i>
+                            <input type="email" id="rel-email-input" placeholder="relative@email.com" />
+                        </div>
+                        <button class="btn-primary" id="btn-link-relative">
+                            <i class="fas fa-link"></i> Link Relative
+                        </button>
+                    </div>
+                    <div class="validation-feedback hidden" id="rel-email-feedback"></div>
+                    <div class="validation-feedback hidden" id="rel-email-error"></div>
+                </div>
+            </div>
+
+            <!-- Linked Relatives Table -->
+            <div class="card hidden" id="rel-linked-table-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-link"></i> Linked Relatives for <span id="rel-linked-patient-label"></span></h3>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table" id="rel-linked-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Linked On</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rel-linked-table-body"></tbody>
+                    </table>
+                    <div class="empty-state hidden" id="rel-linked-empty">
+                        <i class="fas fa-unlink"></i>
+                        <p>No relatives linked to this patient yet.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ---- DOCTORS PANEL ---- -->
+        <section class="dashboard-panel" id="admin-panel-doctors">
+            <div class="panel-header">
+                <h2><i class="fas fa-user-doctor"></i> Doctor Management</h2>
+                <button class="btn-secondary" id="btn-provision-doctor"><i class="fas fa-plus"></i> Provision Doctor</button>
+            </div>
+            <div class="card" id="admin-doctors-card">
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Specialization</th>
+                                <th>Assigned Patient</th>
+                                <th>Default Password</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-doctors-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ---- AUDIT LOG PANEL ---- -->
+        <section class="dashboard-panel" id="admin-panel-audit">
+            <div class="panel-header">
+                <h2><i class="fas fa-scroll"></i> Audit Log</h2>
+                <button class="btn-secondary" id="btn-export-audit">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+            </div>
+            <div class="search-filter-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="search" id="audit-search" placeholder="Search action, actor, target…" />
+                </div>
+                <select id="audit-role-filter" class="select-input">
+                    <option value="">All Roles</option>
+                    <option value="admin">Admin</option>
+                    <option value="doctor">Doctor</option>
+                    <option value="relative">Relative</option>
+                </select>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table class="data-table" id="audit-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Actor</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                                <th>Target</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-table-body"></tbody>
+                    </table>
+                    <div class="empty-state hidden" id="audit-empty">
+                        <i class="fas fa-scroll"></i>
+                        <p>No audit entries yet.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ---- NOTIFICATIONS PANEL ---- -->
+        <section class="dashboard-panel" id="admin-panel-notifications">
+            <div class="panel-header">
+                <h2><i class="fas fa-bell"></i> Notification Delivery Status</h2>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Sent At</th>
+                                <th>Relative</th>
+                                <th>Patient</th>
+                                <th>Type</th>
+                                <th>Message</th>
+                                <th>Status</th>
+                                <th>Read</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-notif-table-body"></tbody>
+                    </table>
+                    <div class="empty-state hidden" id="admin-notif-empty">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>No notifications sent yet.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- ===================================================================
+     DOCTOR DASHBOARD
+=================================================================== -->
+<div id="page-doctor" class="page-dashboard hidden">
+    <aside class="sidebar" id="doctor-sidebar">
+        <div class="sidebar-brand">
+            <i class="fas fa-heartbeat brand-icon"></i>
+            <span class="brand-text">BioCloud IoT</span>
+        </div>
+        <nav class="sidebar-nav">
+            <button class="nav-item active" data-panel="doc-panel-patient" id="nav-doc-patient">
+                <i class="fas fa-bed-pulse"></i><span>My Patient</span>
+            </button>
+            <button class="nav-item" data-panel="doc-panel-ecg" id="nav-doc-ecg">
+                <i class="fas fa-wave-square"></i><span>ECG Monitor</span>
+            </button>
+            <button class="nav-item" data-panel="doc-panel-notes" id="nav-doc-notes">
+                <i class="fas fa-notes-medical"></i><span>Clinical Notes</span>
+            </button>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="session-info">
+                <i class="fas fa-stethoscope"></i>
+                <div>
+                    <span class="session-name" id="doc-session-name">Doctor</span>
+                    <span class="session-role">Attending Physician</span>
+                </div>
+            </div>
+            <button class="btn-logout" id="btn-doc-logout" title="Sign Out">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </aside>
+
+    <main class="dashboard-main" id="doctor-main">
+        <header class="topbar">
+            <button class="sidebar-toggle" id="doc-sidebar-toggle"><i class="fas fa-bars"></i></button>
+            <div class="topbar-title" id="doc-topbar-title">Patient Overview</div>
+            <div class="topbar-right">
+                <div class="clock-display" id="doc-clock"></div>
+            </div>
+        </header>
+
+        <!-- Patient Info Panel -->
+        <section class="dashboard-panel active" id="doc-panel-patient">
+            <div class="panel-header">
+                <h2><i class="fas fa-bed-pulse"></i> Assigned Patient</h2>
+            </div>
+
+            <!-- Vitals Strip -->
+            <div class="vitals-strip" id="doc-vitals-strip">
+                <div class="vital-card vital-bpm">
+                    <div class="vital-icon"><i class="fas fa-heart-pulse"></i></div>
+                    <div class="vital-info">
+                        <span class="vital-value" id="doc-bpm">--</span>
+                        <span class="vital-unit">BPM</span>
+                        <span class="vital-label">Heart Rate</span>
+                    </div>
+                </div>
+                <div class="vital-card vital-spo2">
+                    <div class="vital-icon"><i class="fas fa-lungs"></i></div>
+                    <div class="vital-info">
+                        <span class="vital-value" id="doc-spo2">--</span>
+                        <span class="vital-unit">%</span>
+                        <span class="vital-label">SpO₂</span>
+                    </div>
+                </div>
+                <div class="vital-card vital-temp">
+                    <div class="vital-icon"><i class="fas fa-temperature-half"></i></div>
+                    <div class="vital-info">
+                        <span class="vital-value" id="doc-temp">--</span>
+                        <span class="vital-unit">°C</span>
+                        <span class="vital-label">Temperature</span>
+                    </div>
+                </div>
+                <div class="vital-card vital-accel">
+                    <div class="vital-icon"><i class="fas fa-person-walking"></i></div>
+                    <div class="vital-info">
+                        <span class="vital-value" id="doc-accel">--</span>
+                        <span class="vital-unit">g</span>
+                        <span class="vital-label">Motion/Activity</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient card -->
+            <div class="patient-detail-card" id="doc-patient-detail-card">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Anomaly simulator bar (doctors only) -->
+            <div class="card mt-4" id="doc-anomaly-bar">
+                <div class="card-header">
+                    <h3><i class="fas fa-radiation"></i> Anomaly Simulator</h3>
+                    <span class="badge-pill badge-warning">Training Mode</span>
+                </div>
+                <div class="card-body">
+                    <div class="anomaly-buttons">
+                        <button class="anomaly-btn" data-type="TACHYCARDIA"><i class="fas fa-heart"></i> Tachycardia</button>
+                        <button class="anomaly-btn" data-type="HYPOXIA"><i class="fas fa-lungs"></i> Hypoxia</button>
+                        <button class="anomaly-btn" data-type="FEVER"><i class="fas fa-temperature-high"></i> High Fever</button>
+                        <button class="anomaly-btn" data-type="FALL"><i class="fas fa-person-falling"></i> Fall</button>
+                        <button class="anomaly-btn" data-type="DISCONNECT"><i class="fas fa-wifi"></i> Sensor Off</button>
+                        <button class="anomaly-btn anomaly-reset" data-type="NONE"><i class="fas fa-rotate-left"></i> Reset</button>
+                    </div>
+                    <div class="anomaly-status" id="doc-anomaly-status">Status: <strong>Normal</strong></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ECG Monitor Panel -->
+        <section class="dashboard-panel" id="doc-panel-ecg">
+            <div class="panel-header">
+                <h2><i class="fas fa-wave-square"></i> ECG Oscilloscope</h2>
+                <div class="ecg-controls">
+                    <label>Gain: <select id="doc-ecg-gain" class="select-input-sm">
+                        <option value="0.5">0.5x</option>
+                        <option value="1.0" selected>1.0x</option>
+                        <option value="1.5">1.5x</option>
+                        <option value="2.0">2.0x</option>
+                    </select></label>
+                    <label>Speed: <select id="doc-ecg-speed" class="select-input-sm">
+                        <option value="1.5">Slow</option>
+                        <option value="2.5" selected>Normal</option>
+                        <option value="4.0">Fast</option>
+                    </select></label>
+                    <label class="checkbox-label"><input type="checkbox" id="doc-ecg-grid" checked /> Grid</label>
+                </div>
+            </div>
+            <div class="card ecg-card">
+                <canvas id="doc-ecg-canvas"></canvas>
+            </div>
+            <div class="rhythm-info" id="doc-ecg-rhythm">
+                <span class="rhythm-label">Rhythm:</span>
+                <span class="rhythm-value" id="doc-rhythm-val">Normal Sinus</span>
+            </div>
+        </section>
+
+        <!-- Clinical Notes Panel -->
+        <section class="dashboard-panel" id="doc-panel-notes">
+            <div class="panel-header">
+                <h2><i class="fas fa-notes-medical"></i> Clinical Notes & Reports</h2>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Add Treatment Note</h3>
+                </div>
+                <div class="card-body">
+                    <textarea id="doc-note-input" class="textarea-input" rows="3" placeholder="Enter treatment observation, medication update, or clinical note…"></textarea>
+                    <button class="btn-primary mt-2" id="btn-doc-add-note">
+                        <i class="fas fa-plus"></i> Save Note
+                    </button>
+                </div>
+            </div>
+            <div class="notes-list" id="doc-notes-list">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- ===================================================================
+     RELATIVE DASHBOARD
+=================================================================== -->
+<div id="page-relative" class="page-dashboard hidden">
+    <aside class="sidebar" id="rel-sidebar">
+        <div class="sidebar-brand">
+            <i class="fas fa-heartbeat brand-icon"></i>
+            <span class="brand-text">BioCloud IoT</span>
+        </div>
+        <nav class="sidebar-nav">
+            <button class="nav-item active" data-panel="rel-panel-patients" id="nav-rel-patients">
+                <i class="fas fa-bed-pulse"></i><span>My Patients</span>
+            </button>
+            <button class="nav-item" data-panel="rel-panel-notifications" id="nav-rel-notif">
+                <i class="fas fa-bell"></i>
+                <span>Notifications</span>
+                <span class="nav-badge hidden" id="rel-nav-notif-badge">0</span>
+            </button>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="session-info">
+                <i class="fas fa-users"></i>
+                <div>
+                    <span class="session-name" id="rel-session-name">Relative</span>
+                    <span class="session-role">Patient's Relative</span>
+                </div>
+            </div>
+            <button class="btn-logout" id="btn-rel-logout" title="Sign Out">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </aside>
+
+    <main class="dashboard-main" id="rel-main">
+        <header class="topbar">
+            <button class="sidebar-toggle" id="rel-sidebar-toggle"><i class="fas fa-bars"></i></button>
+            <div class="topbar-title" id="rel-topbar-title">My Patients</div>
+            <div class="topbar-right">
+                <div class="server-status-pill online" id="rel-server-status">
+                    <span class="status-dot"></span>
+                    <span>Live IoT Cloud Stream</span>
+                </div>
+                <div class="clock-display" id="rel-clock"></div>
+            </div>
+        </header>
+
+        <!-- Linked Patients Panel -->
+        <section class="dashboard-panel active" id="rel-panel-patients">
+            <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <h2><i class="fas fa-bed-pulse"></i> Your Linked Patients</h2>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-secondary" id="btn-rel-test-alarm" style="font-size:12px; padding:6px 12px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+                        <i class="fas fa-volume-high"></i> Test Alarm Siren
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Audio Alarm Status Banner -->
+            <div id="mobile-sound-status-bar" style="background: rgba(0, 212, 255, 0.08); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; flex-wrap: wrap; gap: 6px;">
+                <span id="sound-status-text" style="color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-volume-high" style="color: var(--green);"></i>
+                    <span><strong>Critical Alarm Siren:</strong> Active &amp; Ready</span>
+                </span>
+                <span style="font-size: 11px; color: var(--text-muted);">Auto-vibrates &amp; sounds on fever &ge; 38.0 °C</span>
+            </div>
+
+            <!-- No access state -->
+            <div class="empty-state" id="rel-no-patients-state" style="display:none;">
+                <div class="empty-icon"><i class="fas fa-user-clock"></i></div>
+                <h3>Awaiting Access</h3>
+                <p>Your account is registered and verified.<br />
+                Please inform the hospital administrator to link your email to your patient's record.</p>
+                <div class="empty-step-card">
+                    <ol class="empty-steps">
+                        <li>Visit the hospital reception or call the admin desk</li>
+                        <li>Provide your registered email: <strong id="rel-empty-email"></strong></li>
+                        <li>Once admin links you to a patient, this page will update automatically</li>
+                    </ol>
+                    <button class="btn btn-primary" id="btn-rel-sync-check" style="margin-top:16px; width:100%; justify-content:center; gap:8px;">
+                        <i class="fas fa-arrows-rotate"></i> Check &amp; Sync Patient Link Now
+                    </button>
+                    <p style="margin: 10px 0 0 0; font-size: 12px; color: var(--text-muted); text-align: center;">
+                        <i class="fas fa-circle-info"></i> Make sure the email above matches the one linked by Admin (e.g. <strong>laxman@gmail.com</strong>).
+                    </p>
+                </div>
+            </div>
+
+            <!-- Linked patient cards grid -->
+            <div class="rel-patient-grid" id="rel-patient-grid"></div>
+
+            <!-- Live Temperature History Chart Card (Mobile & Desktop) -->
+            <div class="temp-history-chart-card" id="rel-temp-chart-card">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="margin:0; font-size:15px;"><i class="fas fa-chart-line"></i> Patient Real-Time Temperature History</h3>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span class="live-pulse-dot" title="Live stream active"></span>
+                        <span class="threshold-badge-pill critical"><i class="fas fa-bell"></i> Critical: &ge; 38.0 &deg;C</span>
+                    </div>
+                </div>
+                <div class="chart-container-wrap">
+                    <canvas id="rel-temp-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Notifications Panel -->
+        <section class="dashboard-panel" id="rel-panel-notifications">
+            <div class="panel-header">
+                <h2><i class="fas fa-bell"></i> Health Notifications</h2>
+                <button class="btn-secondary" id="btn-rel-mark-all-read">
+                    <i class="fas fa-check-double"></i> Mark All Read
+                </button>
+            </div>
+            <div class="notifications-list" id="rel-notif-list"></div>
+            <div class="empty-state hidden" id="rel-notif-empty">
+                <i class="fas fa-bell-slash"></i>
+                <p>No notifications yet. You'll receive updates when your patient's status changes.</p>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- ===================================================================
+     MODALS
+=================================================================== -->
+
+<!-- Confirmation Dialog -->
+<div class="modal-overlay hidden" id="modal-confirm-overlay">
+    <div class="modal-box" role="dialog" aria-modal="true">
+        <div class="modal-icon warning-icon"><i class="fas fa-triangle-exclamation"></i></div>
+        <h3 class="modal-title" id="modal-confirm-title">Confirm Action</h3>
+        <p class="modal-body" id="modal-confirm-body">Are you sure?</p>
+        <div class="modal-actions">
+            <button class="btn-secondary" id="btn-modal-cancel">Cancel</button>
+            <button class="btn-danger" id="btn-modal-confirm">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Patient Detail Modal -->
+<div class="modal-overlay hidden" id="modal-patient-overlay">
+    <div class="modal-box modal-wide" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-bed-pulse"></i> <span id="modal-patient-name">Patient</span></h3>
+            <button class="modal-close-btn" id="btn-patient-modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-patient-body" id="modal-patient-body">
+            <!-- Rendered by JS -->
+        </div>
+        <div class="modal-footer" id="modal-patient-footer">
+            <button class="btn-secondary" id="btn-patient-modal-close2">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Doctor Provision Modal -->
+<div class="modal-overlay hidden" id="modal-doctor-overlay">
+    <div class="modal-box" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-user-doctor"></i> Provision New Doctor</h3>
+            <button class="modal-close-btn" id="btn-doctor-modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="form-provision-doctor" novalidate>
+            <div class="form-group">
+                <label for="prov-name">Full Name</label>
+                <input type="text" id="prov-name" placeholder="Dr. Full Name" />
+                <span class="field-error" id="prov-name-err"></span>
+            </div>
+            <div class="form-group">
+                <label for="prov-email">Work Email</label>
+                <input type="email" id="prov-email" placeholder="dr.name@hospital.org" />
+                <span class="field-error" id="prov-email-err"></span>
+            </div>
+            <div class="form-group">
+                <label for="prov-patient">Assign Patient</label>
+                <select id="prov-patient" class="select-input">
+                    <option value="">Select patient…</option>
+                </select>
+                <span class="field-error" id="prov-patient-err"></span>
+            </div>
+            <div class="form-group">
+                <label for="prov-pass">Temporary Password</label>
+                <input type="text" id="prov-pass" value="Doc@123!" />
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="btn-doctor-modal-cancel">Cancel</button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-plus"></i> Create Account
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Cloud Computing Architecture & Key Role Modal -->
+<div class="modal-overlay hidden" id="modal-cloud-overlay">
+    <div class="modal-box modal-wide" role="dialog" aria-modal="true" style="max-width: 850px; max-height: 88vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-cloud"></i> Cloud Computing Architecture &amp; Key Role in Healthcare</h3>
+            <button class="modal-close-btn" id="btn-cloud-modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-patient-body" style="font-size: 13px; line-height: 1.6;">
+            <div style="background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.3); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+                <h4 style="margin: 0 0 6px 0; color: var(--cyan); font-size: 14px;"><i class="fas fa-bullseye"></i> Why Cloud Computing is Essential (The Core Problem Solved)</h4>
+                <p style="margin: 0; color: var(--text-secondary);">
+                    Traditional patient monitors are confined to the hospital bedside. An ESP32 microcontroller has only <strong>520 KB RAM</strong> and cannot store months of patient history or serve multiple concurrent users. Furthermore, hospital Wi-Fi networks use private IPs behind firewalls (NAT), preventing family members at home or work from connecting. 
+                    <strong>Cloud Computing solves this by providing a globally-accessible, highly scalable, and secure central backbone.</strong>
+                </p>
+            </div>
+
+            <!-- 5-Layer Cloud Architecture -->
+            <h4 style="margin: 16px 0 8px 0; font-size: 14px; color: #fff;"><i class="fas fa-layer-group"></i> 5-Layer Edge-to-Cloud System Architecture</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-bottom: 16px;">
+                <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px;">
+                    <strong style="color: var(--cyan);"><i class="fas fa-microchip"></i> Layer 1: Edge Sensing</strong>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">ESP32 DevKit + DS18B20 digital sensor acquires body temperature every 2–5s, performs CRC validation, and packages JSON telemetry payloads.</div>
+                </div>
+                <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px;">
+                    <strong style="color: #ffab40;"><i class="fas fa-network-wired"></i> Layer 2: Cloud Edge Proxy</strong>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Cloudflare Global Anycast Edge routes traffic via 300+ cloud data centers, terminates SSL/TLS certificates, and bypasses NAT firewalls.</div>
+                </div>
+                <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px;">
+                    <strong style="color: var(--green);"><i class="fas fa-server"></i> Layer 3: Cloud Compute (PaaS)</strong>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Cloud REST API ingests telemetry, runs real-time threshold evaluation (&lt;37.5° Normal, 37.5°–37.9° Warning, &ge;38.0° Critical), cooldown &amp; deduplication.</div>
+                </div>
+                <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px;">
+                    <strong style="color: #b388ff;"><i class="fas fa-database"></i> Layer 4: Cloud DBaaS Persistence</strong>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Centralized persistent cloud storage preserves patient records, historical time-series temperatures, relative authorization links, and HIPAA audit trails.</div>
+                </div>
+                <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; grid-column: 1 / -1;">
+                    <strong style="color: var(--red);"><i class="fas fa-bell"></i> Layer 5: Cloud Pub/Sub &amp; Real-Time Distribution</strong>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Server-Sent Events (SSE) multiplexing pushes live telemetry &amp; emergency siren alarms to doctor dashboards and authorized relatives' smartphones across public 4G/5G mobile networks worldwide.</div>
+                </div>
+            </div>
+
+            <!-- Cloud Service Models -->
+            <h4 style="margin: 16px 0 8px 0; font-size: 14px; color: #fff;"><i class="fas fa-cubes"></i> Cloud Service Models (SPI Framework) Implemented</h4>
+            <table class="data-table" style="font-size: 12px; margin-bottom: 14px;">
+                <thead>
+                    <tr>
+                        <th>Cloud Model</th>
+                        <th>Implementation in BioCloud IoT</th>
+                        <th>Key Benefit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>PaaS</strong> (Platform as a Service)</td>
+                        <td>Cloud Telemetry Ingestion API, Rules Evaluation Engine, Real-Time SSE Streamer</td>
+                        <td>Zero infrastructure maintenance; handles sensor streams concurrently.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DBaaS</strong> (Database as a Service)</td>
+                        <td>Persistent Cloud JSON/NoSQL Store, Time-Series Telemetry Table, HIPAA Audit Logs</td>
+                        <td>Refreshing or changing devices never loses patient medical history.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SaaS</strong> (Software as a Service)</td>
+                        <td>Role-Based Dashboards (Admin, Doctor, Patient Relative) rendered in any browser</td>
+                        <td>Instant access on mobile/desktop without installing native client apps.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- NIST Cloud Characteristics -->
+            <h4 style="margin: 14px 0 8px 0; font-size: 14px; color: #fff;"><i class="fas fa-certificate"></i> Key NIST Cloud Computing Characteristics</h4>
+            <ul style="padding-left: 20px; margin: 0; font-size: 12px; color: var(--text-secondary);">
+                <li><strong>Broad Network Access:</strong> Relatives can monitor patients on 4G/5G cellular data from anywhere in the world.</li>
+                <li><strong>Multi-Tenancy &amp; Resource Pooling:</strong> A single cloud instance securely isolates multiple hospital wards, doctors, and patient families via strict RBAC.</li>
+                <li><strong>On-Demand Self-Service:</strong> Doctors and relatives register, view telemetry, and receive alarms without human administrative intervention.</li>
+            </ul>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <a href="/cloud-db" target="_blank" class="btn-secondary" style="font-size: 12px; padding: 6px 14px; border-color: rgba(179,136,255,0.4); color: #b388ff; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fas fa-database"></i> Open Cloud DB Console
+            </a>
+            <button class="btn-primary" id="btn-cloud-modal-close2">Close Architecture View</button>
+        </div>
+    </div>
+</div>
+
+<!-- Hardware Wiring & ESP32 Setup Modal -->
+<div class="modal-overlay hidden" id="modal-wiring-overlay">
+    <div class="modal-box modal-wide" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-microchip"></i> ESP32 &amp; DS18B20 Hardware Wiring Guide</h3>
+            <button class="modal-close-btn" id="btn-wiring-modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-patient-body" style="font-size: 13px; line-height: 1.6;">
+            <p>Connect your physical DS18B20 temperature sensor to the ESP32 using these exact pinouts:</p>
+            <div style="background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; font-family: monospace; white-space: pre-wrap; font-size: 12px; margin: 12px 0;">
+DS18B20 Sensor Wire      ----->   ESP32 Pin
+------------------------------------------------
+1. RED Wire   (VCC)      ----->   3V3 (3.3V)
+2. BLACK Wire (GND)      ----->   GND
+3. YELLOW Wire(Data)     ----->   GPIO 4 (Pin D4)
+
+CRUCIAL: Place a 4.7kΩ Resistor between 3V3 (RED) and GPIO 4 (YELLOW)!
+(Band colors: Yellow - Violet - Red - Gold)
+            </div>
+            <h4>Arduino IDE Quick Steps:</h4>
+            <ol style="padding-left: 20px; margin: 8px 0 14px 0;">
+                <li>Install <strong>OneWire</strong> and <strong>DallasTemperature</strong> libraries in Arduino IDE.</li>
+                <li>Open <code>firmware/biocloud_temp_esp32.ino</code>.</li>
+                <li>Enter your Wi-Fi name (<strong>AUS-ROBOTICS</strong>) and password at the top.</li>
+                <li>Verify server URL is set to: <code class="mono">http://192.168.205.219:3000/api/telemetry</code></li>
+                <li>Select board <strong>ESP32 Dev Module</strong>, choose your COM port, and click <strong>Upload</strong>!</li>
+            </ol>
+            <p class="text-muted"><i class="fas fa-info-circle"></i> Once uploaded, open Serial Monitor at 115200 baud to see readings streaming live to this dashboard and connected mobile phones!</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-primary" id="btn-wiring-modal-close2">Got It</button>
+        </div>
+    </div>
+</div>
+
+<!-- Critical Alarm Overlay (for relatives) -->
+<div class="alarm-overlay hidden" id="critical-alarm-overlay">
+    <div class="alarm-siren">
+        <div class="alarm-pulse-ring"></div>
+        <div class="alarm-pulse-ring delay1"></div>
+        <div class="alarm-pulse-ring delay2"></div>
+        <div class="alarm-icon"><i class="fas fa-heart-crack"></i></div>
+    </div>
+    <h2 class="alarm-title">🚨 CRITICAL PATIENT ALARM</h2>
+    <p class="alarm-patient-name" id="alarm-patient-label"></p>
+    <p class="alarm-message" id="alarm-message-text"></p>
+    <div id="alarm-sound-hint" style="font-size:12px; color:#ffab40; margin-bottom:8px;">
+        <i class="fas fa-volume-high"></i> Siren is ringing & phone is vibrating. Tap anywhere if muted.
+    </div>
+    <button class="btn-danger alarm-ack-btn" id="btn-ack-alarm">
+        <i class="fas fa-check"></i> Acknowledge & Mute
+    </button>
+</div>
+
+<!-- Scripts (order matters: security → db → alarm_audio → app) -->
+<script src="security.js?v=3.2"></script>
+<script src="db.js?v=3.2"></script>
+<script src="alarm_audio.js?v=3.2"></script>
+<script src="app.js?v=3.2"></script>
+</body>
+</html>
