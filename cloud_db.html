@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioCloud IoT - Cloud Database Console (DBaaS)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-body: #0a0e17;
+            --bg-card: #131a29;
+            --bg-elevated: #1a2336;
+            --border: #23314a;
+            --border-hover: #374a6b;
+            --primary: #00d2ff;
+            --primary-glow: rgba(0, 210, 255, 0.2);
+            --accent: #7928ca;
+            --text-main: #f0f4fc;
+            --text-muted: #8b9bb4;
+            --green: #00e676;
+            --amber: #ffab00;
+            --red: #ff1744;
+            --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Cloud Provider Bar */
+        .cloud-banner {
+            background: linear-gradient(90deg, #1f1435, #0f1c3f);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+
+        .cloud-provider-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #ffab40;
+            font-weight: 600;
+        }
+
+        .cloud-provider-tag i {
+            color: #f6821f; /* Cloudflare orange */
+            font-size: 16px;
+        }
+
+        .cloud-status-badge {
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--green);
+            border: 1px solid rgba(0, 230, 118, 0.4);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--green);
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.8; }
+        }
+
+        /* Header */
+        header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #00d2ff, #7928ca);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #fff;
+        }
+
+        .logo-title h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .logo-title p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: var(--bg-elevated);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d2ff, #0070f3);
+            border: none;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            color: #fff;
+        }
+
+        /* Main Workspace */
+        .workspace {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar / Table Navigation */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            padding: 16px 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section-title {
+            padding: 8px 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .table-nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .table-nav-item {
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.15s;
+            border-left: 3px solid transparent;
+        }
+
+        .table-nav-item:hover {
+            background: var(--bg-elevated);
+            color: var(--text-main);
+        }
+
+        .table-nav-item.active {
+            background: rgba(0, 210, 255, 0.08);
+            color: var(--primary);
+            border-left-color: var(--primary);
+            font-weight: 600;
+        }
+
+        .table-badge {
+            background: var(--bg-elevated);
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            border: 1px solid var(--border);
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Table Control Bar */
+        .table-control-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 14px 18px;
+            border-radius: 8px;
+        }
+
+        .table-info h2 {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .table-info span {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 12px 8px 32px;
+            border-radius: 6px;
+            font-size: 13px;
+            width: 240px;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* Data Table Container */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        th {
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .mono {
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tag-green { background: rgba(0, 230, 118, 0.15); color: var(--green); border: 1px solid rgba(0, 230, 118, 0.3); }
+        .tag-amber { background: rgba(255, 171, 0, 0.15); color: var(--amber); border: 1px solid rgba(255, 171, 0, 0.3); }
+        .tag-red { background: rgba(255, 23, 68, 0.15); color: var(--red); border: 1px solid rgba(255, 23, 68, 0.3); }
+        .tag-blue { background: rgba(0, 210, 255, 0.15); color: var(--primary); border: 1px solid rgba(0, 210, 255, 0.3); }
+
+        /* Raw JSON Viewer */
+        .raw-json-panel {
+            background: #080c14;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: #a0c0e0;
+            overflow-x: auto;
+            max-height: 500px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Endpoints strip */
+        .endpoints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .endpoint-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .endpoint-method {
+            background: #0070f3;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            font-size: 10px;
+        }
+
+        .endpoint-path {
+            font-family: var(--font-mono);
+            color: var(--text-main);
+            margin-left: 8px;
+            font-weight: 500;
+        }
+
+        .endpoint-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .endpoint-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cloud Provider Banner -->
+    <div class="cloud-banner">
+        <div class="cloud-provider-tag">
+            <i class="fab fa-cloudflare"></i>
+            <span>Cloud Ingress: Cloudflare Zero Trust Edge Cloud (Anycast Network)</span>
+        </div>
+        <div class="cloud-status-badge">
+            <span class="pulse-dot"></span>
+            <span>Cloud DBaaS: ONLINE</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-database"></i></div>
+            <div class="logo-title">
+                <h1>BioCloud IoT — Cloud Database Console</h1>
+                <p>Centralized Persistent DBaaS Layer · Multi-Tenant Clinical Records</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn" id="btn-open-firebase-sync" style="border-color: #ffab00; color: #ffab00;"><i class="fab fa-google"></i> Sync to Google Firebase</button>
+            <button class="btn" id="btn-refresh"><i class="fas fa-rotate"></i> Refresh</button>
+            <a href="/api/sync" target="_blank" class="btn"><i class="fas fa-code"></i> View Raw JSON</a>
+            <a href="/" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Open Application</a>
+        </div>
+    </header>
+
+    <!-- Workspace -->
+    <div class="workspace">
+
+        <!-- Sidebar / Tables -->
+        <nav class="sidebar">
+            <div class="sidebar-section-title">Cloud DBaaS Tables</div>
+            <ul class="table-nav-list" id="table-nav">
+                <li class="table-nav-item active" data-table="patients">
+                    <span><i class="fas fa-bed-pulse" style="width: 20px;"></i> patients</span>
+                    <span class="table-badge" id="badge-patients">3</span>
+                </li>
+                <li class="table-nav-item" data-table="temperature_history">
+                    <span><i class="fas fa-chart-line" style="width: 20px;"></i> temperature_history</span>
+                    <span class="table-badge" id="badge-telemetry">0</span>
+                </li>
+                <li class="table-nav-item" data-table="alerts">
+                    <span><i class="fas fa-triangle-exclamation" style="width: 20px;"></i> alerts</span>
+                    <span class="table-badge" id="badge-alerts">0</span>
+                </li>
+                <li class="table-nav-item" data-table="users">
+                    <span><i class="fas fa-users" style="width: 20px;"></i> users</span>
+                    <span class="table-badge" id="badge-users">0</span>
+                </li>
+                <li class="table-nav-item" data-table="patient_relatives">
+                    <span><i class="fas fa-link" style="width: 20px;"></i> patient_relatives</span>
+                    <span class="table-badge" id="badge-relatives">0</span>
+                </li>
+                <li class="table-nav-item" data-table="audit_logs">
+                    <span><i class="fas fa-shield-halved" style="width: 20px;"></i> audit_logs</span>
+                    <span class="table-badge" id="badge-audit">0</span>
+                </li>
+                <li class="table-nav-item" data-table="device_health">
+                    <span><i class="fas fa-microchip" style="width: 20px;"></i> device_health</span>
+                    <span class="table-badge" id="badge-device">OK</span>
+                </li>
+            </ul>
+
+            <div class="sidebar-bottom">
+                <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-main);">
+                    <i class="fas fa-server"></i> Cloud Storage Engine
+                </div>
+                <div>Storage: Persistent JSON DBaaS</div>
+                <div>Security: Multi-Tenant RBAC</div>
+                <div style="margin-top: 6px; color: var(--green);">TLS 1.3 End-to-End Encrypted</div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content-area">
+
+            <!-- Control Bar -->
+            <div class="table-control-bar">
+                <div class="table-info">
+                    <h2 id="current-table-title"><i class="fas fa-table"></i> Table: patients</h2>
+                    <span id="current-table-meta">Showing 3 cloud records</span>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div class="search-box">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input type="text" id="search-input" placeholder="Filter cloud records...">
+                    </div>
+                    <button class="btn" id="btn-toggle-json"><i class="fas fa-brackets-curly"></i> Toggle JSON</button>
+                </div>
+            </div>
+
+            <!-- Table View -->
+            <div class="table-container" id="table-container">
+                <div id="table-render-area">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- JSON View (Initially Hidden) -->
+            <div id="json-render-area" class="raw-json-panel" style="display: none;"></div>
+
+            <!-- Live Cloud REST Endpoints Strip -->
+            <div style="margin-top: 10px;">
+                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--text-muted);">
+                    <i class="fas fa-cloud"></i> Public Cloud REST API Endpoints
+                </h3>
+                <div class="endpoints-grid">
+                    <div class="endpoint-card">
+                        <div>
+                            <span class="endpoint-method">GET</span>
+                            <span class="endpoint-path">/api/sync</span>
+                        </div>
+                        <a href="/api/sync" target="_blank" class="endpoint-link">Fetch JSON <i class="fas fa-arrow-up-right-from-square"></i></a>
+                    </div>
+                    <div class="endpoint-card">
+                        <div>
+                            <span class="endpoint-method">GET</span>
+                            <span class="endpoint-path">/api/patients</span>
+                        </div>
+                        <a href="/api/patients" target="_blank" class="endpoint-link">Fetch JSON <i class="fas fa-arrow-up-right-from-square"></i></a>
+                    </div>
+                    <div class="endpoint-card">
+                        <div>
+                            <span class="endpoint-method">GET</span>
+                            <span class="endpoint-path">/api/telemetry/history/p1</span>
+                        </div>
+                        <a href="/api/telemetry/history/p1" target="_blank" class="endpoint-link">Fetch JSON <i class="fas fa-arrow-up-right-from-square"></i></a>
+                    </div>
+                    <div class="endpoint-card">
+                        <div>
+                            <span class="endpoint-method">GET</span>
+                            <span class="endpoint-path">/api/alerts</span>
+                        </div>
+                        <a href="/api/alerts" target="_blank" class="endpoint-link">Fetch JSON <i class="fas fa-arrow-up-right-from-square"></i></a>
+                    </div>
+                    <div class="endpoint-card">
+                        <div>
+                            <span class="endpoint-method">GET</span>
+                            <span class="endpoint-path">/api/audit</span>
+                        </div>
+                        <a href="/api/audit" target="_blank" class="endpoint-link">Fetch JSON <i class="fas fa-arrow-up-right-from-square"></i></a>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Script to Fetch and Render Cloud DB Data -->
+    <script>
+        let cloudDatabase = null;
+        let currentTable = 'patients';
+        let showJsonView = false;
+
+        async function fetchCloudDatabase() {
+            try {
+                const res = await fetch('/api/sync');
+                if (!res.ok) throw new Error('Network error');
+                const data = await res.json();
+                cloudDatabase = data;
+
+                // Also fetch alerts and audit logs
+                const [alertsRes, auditRes] = await Promise.all([
+                    fetch('/api/alerts').catch(() => null),
+                    fetch('/api/audit').catch(() => null)
+                ]);
+
+                if (alertsRes && alertsRes.ok) cloudDatabase.alerts = await alertsRes.json();
+                if (auditRes && auditRes.ok) cloudDatabase.audit_logs = await auditRes.json();
+
+                updateBadges();
+                renderCurrentTable();
+            } catch (err) {
+                console.error('Failed to load cloud database:', err);
+            }
+        }
+
+        function updateBadges() {
+            if (!cloudDatabase) return;
+            document.getElementById('badge-patients').textContent = cloudDatabase.patients ? cloudDatabase.patients.length : 0;
+            document.getElementById('badge-telemetry').textContent = cloudDatabase.temperature_history ? cloudDatabase.temperature_history.length : 0;
+            document.getElementById('badge-alerts').textContent = cloudDatabase.alerts ? cloudDatabase.alerts.length : 0;
+            document.getElementById('badge-users').textContent = cloudDatabase.users ? cloudDatabase.users.length : 0;
+            document.getElementById('badge-relatives').textContent = cloudDatabase.patient_relatives ? cloudDatabase.patient_relatives.length : 0;
+            document.getElementById('badge-audit').textContent = cloudDatabase.audit_logs ? cloudDatabase.audit_logs.length : 0;
+        }
+
+        function renderCurrentTable() {
+            if (!cloudDatabase) return;
+            const records = cloudDatabase[currentTable] || [];
+            const query = (document.getElementById('search-input').value || '').toLowerCase();
+
+            document.getElementById('current-table-title').innerHTML = `<i class="fas fa-table"></i> Table: ${currentTable}`;
+            document.getElementById('current-table-meta').textContent = `Showing ${Array.isArray(records) ? records.length : 1} cloud records`;
+
+            // Update JSON View
+            document.getElementById('json-render-area').textContent = JSON.stringify(records, null, 2);
+
+            if (showJsonView) {
+                document.getElementById('table-container').style.display = 'none';
+                document.getElementById('json-render-area').style.display = 'block';
+                return;
+            } else {
+                document.getElementById('table-container').style.display = 'block';
+                document.getElementById('json-render-area').style.display = 'none';
+            }
+
+            const container = document.getElementById('table-render-area');
+
+            if (!Array.isArray(records)) {
+                // Object view (e.g. device_health)
+                container.innerHTML = `
+                    <table>
+                        <thead><tr><th>Property</th><th>Cloud Value</th></tr></thead>
+                        <tbody>
+                            ${Object.entries(records).map(([k, v]) => `
+                                <tr>
+                                    <td class="mono"><strong>${k}</strong></td>
+                                    <td class="mono">${typeof v === 'object' ? JSON.stringify(v) : v}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                return;
+            }
+
+            if (records.length === 0) {
+                container.innerHTML = `<div style="padding: 30px; text-align: center; color: var(--text-muted);">No cloud records in table '${currentTable}'.</div>`;
+                return;
+            }
+
+            // Filter
+            const filtered = records.filter(r => {
+                if (!query) return true;
+                return JSON.stringify(r).toLowerCase().includes(query);
+            });
+
+            if (currentTable === 'patients') {
+                container.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Patient ID / Code</th>
+                                <th>Name &amp; Age</th>
+                                <th>Current Temp (°C)</th>
+                                <th>Thresholds (Warn / Crit)</th>
+                                <th>Assigned Doctor</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filtered.map(p => `
+                                <tr>
+                                    <td><span class="mono">${p.id}</span> <br><small class="mono" style="color:var(--text-muted)">${p.patient_code}</small></td>
+                                    <td><strong>${p.name}</strong>, ${p.age} y/o (${p.gender})</td>
+                                    <td>
+                                        <span class="mono" style="font-weight:700; color: ${p.vitals_baseline?.tempC >= p.temp_threshold_critical ? 'var(--red)' : p.vitals_baseline?.tempC >= p.temp_threshold_warning ? 'var(--amber)' : 'var(--green)'}">
+                                            ${p.vitals_baseline?.tempC || (p.last_reading?.temperature || 36.8)} °C
+                                        </span>
+                                    </td>
+                                    <td class="mono">${p.temp_threshold_warning || 37.5} °C / <strong style="color:var(--red)">${p.temp_threshold_critical || 38.0} °C</strong></td>
+                                    <td class="mono">${p.assigned_doctor_id || 'dr_thorne'}</td>
+                                    <td><span class="tag ${p.status === 'Critical' ? 'tag-red' : p.status === 'Monitored' ? 'tag-amber' : 'tag-green'}">${p.status || 'Stable'}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else if (currentTable === 'temperature_history') {
+                const recent = filtered.slice().reverse().slice(0, 50);
+                container.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Reading ID</th>
+                                <th>Patient ID</th>
+                                <th>Device ID</th>
+                                <th>Temperature (°C)</th>
+                                <th>Sensor Status</th>
+                                <th>Recorded At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${recent.map(r => `
+                                <tr>
+                                    <td class="mono">${r.id}</td>
+                                    <td class="mono"><strong>${r.patientId}</strong></td>
+                                    <td class="mono">${r.deviceId || 'ESP32-DS18B20'}</td>
+                                    <td>
+                                        <span class="mono" style="font-weight:700; color:${r.temperatureCelsius >= 38.0 ? 'var(--red)' : r.temperatureCelsius >= 37.5 ? 'var(--amber)' : 'var(--green)'}">
+                                            ${Number(r.temperatureCelsius).toFixed(1)} °C
+                                        </span>
+                                    </td>
+                                    <td><span class="tag ${r.sensorStatus === 'OK' ? 'tag-green' : 'tag-red'}">${r.sensorStatus || 'OK'}</span></td>
+                                    <td class="mono" style="color:var(--text-muted); font-size:11px;">${new Date(r.recordedAt).toLocaleString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else if (currentTable === 'alerts') {
+                container.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Alert ID</th>
+                                <th>Patient</th>
+                                <th>Type</th>
+                                <th>Temperature</th>
+                                <th>Status</th>
+                                <th>Acknowledged?</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filtered.slice().reverse().map(a => `
+                                <tr>
+                                    <td class="mono">${a.id}</td>
+                                    <td><strong>${a.patient_name || a.patient_id}</strong></td>
+                                    <td><span class="tag tag-red">${a.type}</span></td>
+                                    <td class="mono" style="color:var(--red); font-weight:700;">${a.temperature} °C</td>
+                                    <td><span class="tag ${a.status === 'ACTIVE' ? 'tag-red' : 'tag-green'}">${a.status}</span></td>
+                                    <td>${a.acknowledged ? `<span class="tag tag-green"><i class="fas fa-check"></i> MUTED</span>` : `<span class="tag tag-red">UNACKNOWLEDGED</span>`}</td>
+                                    <td class="mono" style="font-size:11px;">${new Date(a.created_at).toLocaleTimeString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else if (currentTable === 'users') {
+                container.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User ID</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Email Verified</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filtered.map(u => `
+                                <tr>
+                                    <td class="mono">${u.id}</td>
+                                    <td><strong>${u.full_name}</strong></td>
+                                    <td class="mono">${u.email}</td>
+                                    <td><span class="tag tag-blue">${u.role}</span></td>
+                                    <td>${u.email_verified ? '<span class="tag tag-green">VERIFIED</span>' : '<span class="tag tag-amber">PENDING</span>'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else if (currentTable === 'patient_relatives') {
+                container.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Link ID</th>
+                                <th>Patient ID</th>
+                                <th>Relative User ID</th>
+                                <th>Relationship</th>
+                                <th>Access Status</th>
+                                <th>Authorized At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filtered.map(r => `
+                                <tr>
+                                    <td class="mono">${r.id}</td>
+                                    <td class="mono"><strong>${r.patient_id}</strong></td>
+                                    <td class="mono">${r.relative_user_id}</td>
+                                    <td>${r.relationship}</td>
+                                    <td><span class="tag tag-green">${r.status}</span></td>
+                                    <td class="mono" style="font-size:11px;">${new Date(r.created_at).toLocaleDateString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else if (currentTable === 'audit_logs') {
+                container.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Log ID</th>
+                                <th>Actor</th>
+                                <th>Action</th>
+                                <th>Target</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filtered.slice().reverse().slice(0, 30).map(l => `
+                                <tr>
+                                    <td class="mono">${l.id}</td>
+                                    <td class="mono">${l.actor_id || 'system'} (${l.actor_role || 'sys'})</td>
+                                    <td><strong>${l.action}</strong></td>
+                                    <td class="mono">${l.target_type || ''}: ${l.target_id || ''}</td>
+                                    <td class="mono" style="font-size:11px;">${new Date(l.timestamp).toLocaleTimeString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+        }
+
+        // Navigation
+        document.getElementById('table-nav').addEventListener('click', (e) => {
+            const item = e.target.closest('.table-nav-item');
+            if (!item) return;
+            document.querySelectorAll('.table-nav-item').forEach(el => el.classList.remove('active'));
+            item.classList.add('active');
+            currentTable = item.dataset.table;
+            renderCurrentTable();
+        });
+
+        // Search
+        document.getElementById('search-input').addEventListener('input', renderCurrentTable);
+
+        // Toggle JSON
+        document.getElementById('btn-toggle-json').addEventListener('click', () => {
+            showJsonView = !showJsonView;
+            document.getElementById('btn-toggle-json').innerHTML = showJsonView ?
+                '<i class="fas fa-table"></i> View as Table' :
+                '<i class="fas fa-brackets-curly"></i> Toggle JSON';
+            renderCurrentTable();
+        });
+
+        // Refresh
+        document.getElementById('btn-refresh').addEventListener('click', fetchCloudDatabase);
+
+        // Firebase Sync Modal & Handler
+        const firebaseModalHtml = `
+            <div id="firebase-sync-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+                <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; max-width:550px; width:90%; padding:24px; box-shadow:0 10px 40px rgba(0,0,0,0.6);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <h3 style="font-size:18px; color:#fff; display:flex; align-items:center; gap:8px;">
+                            <i class="fab fa-google" style="color:#ffab00;"></i> Sync to Google Firebase Cloud Console
+                        </h3>
+                        <button id="btn-close-firebase-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:18px; cursor:pointer;">&times;</button>
+                    </div>
+                    <p style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:14px;">
+                        Upload all patient records, time-series temperature history, and alerts directly into your <strong>Google Firebase Realtime Database (GCP)</strong> so you can show it on the official Google Cloud console website (<code>console.firebase.google.com</code>).
+                    </p>
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12px; font-weight:600; color:var(--text-main); display:block; margin-bottom:6px;">Your Firebase Realtime Database URL:</label>
+                        <input type="text" id="input-firebase-url" placeholder="https://your-project-default-rtdb.firebaseio.com" style="width:100%; background:var(--bg-elevated); border:1px solid var(--border); color:#fff; padding:10px 12px; border-radius:6px; font-size:13px; font-family:var(--font-mono); outline:none;">
+                        <small style="font-size:11px; color:var(--text-muted); margin-top:4px; display:block;">
+                            Get free URL: Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--primary);">console.firebase.google.com</a> &rarr; Add Project &rarr; Realtime Database &rarr; Test Mode.
+                        </small>
+                    </div>
+                    <div id="firebase-sync-status" style="font-size:12px; margin-bottom:14px; display:none;"></div>
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <button id="btn-cancel-firebase-modal" class="btn">Cancel</button>
+                        <button id="btn-submit-firebase-sync" class="btn btn-primary" style="background:linear-gradient(135deg,#ffab00,#ff6d00); border:none;"><i class="fas fa-cloud-arrow-up"></i> Push to Google Cloud</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', firebaseModalHtml);
+        const fbModal = document.getElementById('firebase-sync-modal');
+        fbModal.style.display = 'none';
+
+        document.getElementById('btn-open-firebase-sync').addEventListener('click', () => {
+            fbModal.style.display = 'flex';
+        });
+        document.getElementById('btn-close-firebase-modal').addEventListener('click', () => {
+            fbModal.style.display = 'none';
+        });
+        document.getElementById('btn-cancel-firebase-modal').addEventListener('click', () => {
+            fbModal.style.display = 'none';
+        });
+
+        document.getElementById('btn-submit-firebase-sync').addEventListener('click', async () => {
+            const url = document.getElementById('input-firebase-url').value.trim();
+            const statusEl = document.getElementById('firebase-sync-status');
+            if (!url) {
+                statusEl.style.display = 'block';
+                statusEl.style.color = 'var(--red)';
+                statusEl.textContent = 'Please enter your Firebase Database URL.';
+                return;
+            }
+
+            statusEl.style.display = 'block';
+            statusEl.style.color = 'var(--primary)';
+            statusEl.textContent = 'Uploading patient health data to Google Cloud...';
+
+            try {
+                const res = await fetch('/api/cloud/sync-firebase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firebaseUrl: url })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    statusEl.style.color = 'var(--green)';
+                    statusEl.innerHTML = `<strong>Success!</strong> ${data.message} <br><a href="${data.consoleUrl}" target="_blank" style="color:#00d2ff; text-decoration:underline;">Click here to open Google Firebase Console</a>`;
+                } else {
+                    statusEl.style.color = 'var(--red)';
+                    statusEl.textContent = 'Error: ' + (data.message || data.error);
+                }
+            } catch (err) {
+                statusEl.style.color = 'var(--red)';
+                statusEl.textContent = 'Network error: ' + err.message;
+            }
+        });
+
+        // Auto fetch
+        fetchCloudDatabase();
+        setInterval(fetchCloudDatabase, 3000);
+    </script>
+</body>
+</html>
